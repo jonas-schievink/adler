@@ -1,0 +1,54 @@
+[package]
+name = "adler"
+version = "0.0.0"
+authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
+edition = "2018"
+description = "A simple clean-room implementation of the Adler-32 checksum"
+documentation = "https://docs.rs/adler/"
+repository = "https://github.com/jonas-schievink/adler.git"
+keywords = ["checksum", "integrity", "hash", "adler32"]
+categories = ["algorithms"]
+readme = "README.md"
+license = "0BSD"
+
+[badges]
+travis-ci = { repository = "jonas-schievink/adler" }
+maintenance = { status = "actively-developed" }
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dev-dependencies]
+criterion = "0.3.2"
+
+# cargo-release configuration
+[package.metadata.release]
+tag-message = "{{version}}"
+no-dev-version = true
+pre-release-commit-message = "Release {{version}}"
+
+# Change the changelog's `Unreleased` section to refer to this release and
+# prepend a new `Unreleased` section
+[[package.metadata.release.pre-release-replacements]]
+file    = "CHANGELOG.md"
+search  = "## Unreleased\n"
+replace = """
+## Unreleased
+
+No changes.
+
+## [{{version}} - {{date}}](https://github.com/jonas-schievink/adler/releases/tag/{{version}})
+"""
+
+# Bump the version inside the example manifest in `README.md`
+[[package.metadata.release.pre-release-replacements]]
+file    = "README.md"
+search  = 'adler = "[a-z0-9\\.-]+"'
+replace = 'adler = "{{version}}"'
+
+# Bump the version referenced by the `html_root_url` attribute in `lib.rs`
+[[package.metadata.release.pre-release-replacements]]
+file    = "src/lib.rs"
+search  = "https://docs.rs/adler/[a-z0-9\\.-]+"
+replace = "https://docs.rs/adler/{{version}}"
