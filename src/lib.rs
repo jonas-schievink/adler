@@ -24,20 +24,9 @@ impl Adler32 {
     pub fn finish(&self) -> u32 {
         (u32::from(self.b) << 16) | u32::from(self.a)
     }
-}
 
-impl Default for Adler32 {
-    fn default() -> Self {
-        Self { a: 1, b: 0 }
-    }
-}
-
-impl Hasher for Adler32 {
-    fn finish(&self) -> u64 {
-        u64::from(self.finish())
-    }
-
-    fn write(&mut self, bytes: &[u8]) {
+    /// Adds `bytes` to the checksum calculation.
+    pub fn write(&mut self, bytes: &[u8]) {
         // The basic algorithm is, for every byte:
         //   a = (a + byte) % MOD
         //   b = (b + a) % MOD
@@ -77,6 +66,22 @@ impl Hasher for Adler32 {
         }
         self.a = a as u16;
         self.b = b as u16;
+    }
+}
+
+impl Default for Adler32 {
+    fn default() -> Self {
+        Self { a: 1, b: 0 }
+    }
+}
+
+impl Hasher for Adler32 {
+    fn finish(&self) -> u64 {
+        u64::from(self.finish())
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.write(bytes);
     }
 }
 
