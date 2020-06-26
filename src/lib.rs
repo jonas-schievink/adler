@@ -9,8 +9,6 @@ mod readme;
 
 use core::hash::Hasher;
 
-const MOD: u32 = 65521;
-
 /// Adler-32 checksum calculator.
 #[derive(Debug, Copy, Clone)]
 pub struct Adler32 {
@@ -42,15 +40,45 @@ impl Hasher for Adler32 {
     }
 
     fn write(&mut self, bytes: &[u8]) {
-        for byte in bytes {
-            let val = u32::from(*byte);
-            let a = u32::from(self.a);
-            let b = u32::from(self.b);
-            let new_a = (a + val) % MOD;
-            let new_b = (b + new_a) % MOD;
-            self.a = new_a as u16;
-            self.b = new_b as u16;
+        // The basic algorithm is, for every byte:
+        //   a = (a + byte) % MOD
+        //   b = (b + a) % MOD
+        // where MOD = 65521.
+        //
+        // For efficiency, we can defer the `% MOD` operations as long as neither a nor b overflows:
+        // - Between calls to `write`, we ensure that a and b are always in range 0..MOD.
+        // - We use 32-bit arithmetic in this function.
+        // - Therefore, a and b must not increase by more than 2^32-MOD without performing a `% MOD`
+        //   operation.
+        //
+        // According to Wikipedia, b is calculated as follows for non-incremental checksumming:
+        //   b = n×D1 + (n−1)×D2 + (n−2)×D3 + ... + Dn + n*1 (mod 65521)
+        // Where n is the number of bytes and Di is the i-th Byte. We need to change this to account
+        // for the previous values of a and b, as well as treat every input Byte as being 255:
+        //   b_inc = n×255 + (n-1)×255 + ... + 255 + n*65521
+        // Or in other words:
+        //   b_inc = n*65521 + n(n+1)/2*255
+        // The max chunk size is thus the largest value of n so that b_inc <= 2^32-65521.
+        //   2^32-65521 = n*65521 + n(n+1)/2*255
+        // Plugging this into an equation solve since I can't math gives n = 5552.18..., so 5552.
+
+        const MOD: u32 = 65521;
+        const CHUNK_SIZE: usize = 5552;
+
+        let mut a = u32::from(self.a);
+        let mut b = u32::from(self.b);
+        for chunk in bytes.chunks(CHUNK_SIZE) {
+            for byte in chunk {
+                let val = u32::from(*byte);
+                a += val;
+                b += a;
+            }
+
+            a %= MOD;
+            b %= MOD;
         }
+        self.a = a as u16;
+        self.b = b as u16;
     }
 }
 
