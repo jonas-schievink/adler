@@ -24,6 +24,38 @@ impl Adler32 {
         Self::default()
     }
 
+    /// Creates an `Adler32` instance from a precomputed Adler-32 checksum.
+    ///
+    /// This allows resuming checksum calculation without having to keep the `Adler32` instance
+    /// around.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use adler::Adler32;
+    /// let parts = [
+    ///     "rust",
+    ///     "acean",
+    /// ];
+    /// let whole = adler::from_slice(b"rustacean");
+    ///
+    /// let mut sum = Adler32::new();
+    /// sum.write_slice(parts[0].as_bytes());
+    /// let partial = sum.checksum();
+    ///
+    /// // ...later
+    ///
+    /// let mut sum = Adler32::from_checksum(partial);
+    /// sum.write_slice(parts[1].as_bytes());
+    /// assert_eq!(sum.checksum(), whole);
+    /// ```
+    pub fn from_checksum(sum: u32) -> Self {
+        Adler32 {
+            a: sum as u16,
+            b: (sum >> 16) as u16,
+        }
+    }
+
     /// Returns the calculated checksum at this point in time.
     pub fn checksum(&self) -> u32 {
         (u32::from(self.b) << 16) | u32::from(self.a)
@@ -129,5 +161,20 @@ mod tests {
     #[test]
     fn wiki() {
         assert_eq!(from_slice(b"Wikipedia"), 0x11E60398);
+    }
+
+    #[test]
+    fn resume() {
+        let mut adler = Adler32::new();
+        adler.write_slice(&[0xff; 1024]);
+        let partial = adler.checksum();
+        assert_eq!(partial, 0x79a6fc2e); // from above
+        adler.write_slice(&[0xff; 1024 * 1024 - 1024]);
+        assert_eq!(adler.checksum(), 0x8e88ef11); // from above
+
+        // Make sure that we can resume computing from the partial checksum via `from_checksum`.
+        let mut adler = Adler32::from_checksum(partial);
+        adler.write_slice(&[0xff; 1024 * 1024 - 1024]);
+        assert_eq!(adler.checksum(), 0x8e88ef11); // from above
     }
 }
