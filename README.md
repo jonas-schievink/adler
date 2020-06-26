@@ -12,8 +12,9 @@ releases.
 
 ## Features
 
-- Permissively licensed clean-room implementation.
+- Permissively licensed (0BSD) clean-room implementation.
 - Zero dependencies.
+- Decent performance (3-4 GB/s).
 
 ## Usage
 
