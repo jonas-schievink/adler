@@ -5,8 +5,6 @@
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 
-mod readme;
-
 use core::hash::Hasher;
 
 /// Adler-32 checksum calculator.
