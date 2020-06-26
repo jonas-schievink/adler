@@ -1,4 +1,11 @@
 //! Adler-32 checksum implementation.
+//!
+//! This implementation features:
+//!
+//! - Permissively licensed (0BSD) clean-room implementation.
+//! - Zero dependencies.
+//! - Decent performance (3-4 GB/s).
+//! - `#![no_std]` support (with `default-features = false`).
 
 #![doc(html_root_url = "https://docs.rs/adler/0.1.0")]
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
@@ -12,6 +19,19 @@ extern crate core as std;
 use std::hash::Hasher;
 
 /// Adler-32 checksum calculator.
+///
+/// An instance of this type is equivalent to an Adler-32 checksum: It can be created in the default
+/// state via [`new`] (or the provided `Default` impl), or from a precalculated checksum via
+/// [`from_checksum`], and the currently stored checksum can be fetched via [`checksum`].
+///
+/// This type also implements `Hasher`, which makes it easy to calculate Adler-32 checksums of any
+/// type that implements or derives `Hash`. This also allows using Adler-32 in a `HashMap`, although
+/// that is not recommended (while every checksum is a hash, they are not necessarily good at being
+/// one).
+///
+/// [`new`]: #method.new
+/// [`from_checksum`]: #method.from_checksum
+/// [`checksum`]: #method.checksum
 #[derive(Debug, Copy, Clone)]
 pub struct Adler32 {
     a: u16,
@@ -19,7 +39,7 @@ pub struct Adler32 {
 }
 
 impl Adler32 {
-    /// Creates a new Adler-32 instance.
+    /// Creates a new Adler-32 instance with default state.
     pub fn new() -> Self {
         Self::default()
     }
@@ -62,6 +82,9 @@ impl Adler32 {
     }
 
     /// Adds `bytes` to the checksum calculation.
+    ///
+    /// If efficiency matters, this should be called with Byte slices that contain at least a few
+    /// thousand Bytes.
     pub fn write_slice(&mut self, bytes: &[u8]) {
         // The basic algorithm is, for every byte:
         //   a = (a + byte) % MOD
