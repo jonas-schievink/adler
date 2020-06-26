@@ -1,3 +1,5 @@
+extern crate criterion;
+
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 
 fn bench(c: &mut Criterion) {
