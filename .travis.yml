@@ -12,8 +12,9 @@ env:
     - CARGO_INCREMENTAL=0  # decrease size of `target` to make the cache smaller
   matrix:
     - FEATURES=""  # default configuration
+    - FEATURES="--no-default-features"
 script:
-  - cargo test --all $FEATURES
+  - cargo test --all $FEATURES --all-targets
 notifications:
   email:
     on_success: never
