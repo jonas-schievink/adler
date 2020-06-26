@@ -1,5 +1,7 @@
+extern crate adler;
 extern crate criterion;
 
+use adler::adler32_slice;
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 
 fn bench(c: &mut Criterion) {
@@ -10,12 +12,12 @@ fn bench(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(SIZE as u64));
         group.bench_function("zeroes-100", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0; SIZE]);
+                adler32_slice(&[0; SIZE]);
             });
         });
         group.bench_function("ones-100", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0xff; SIZE]);
+                adler32_slice(&[0xff; SIZE]);
             });
         });
     }
@@ -28,13 +30,13 @@ fn bench(c: &mut Criterion) {
 
         group.bench_function("zeroes-1k", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0; SIZE]);
+                adler32_slice(&[0; SIZE]);
             });
         });
 
         group.bench_function("ones-1k", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0xff; SIZE]);
+                adler32_slice(&[0xff; SIZE]);
             });
         });
     }
@@ -46,13 +48,13 @@ fn bench(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(SIZE as u64));
         group.bench_function("zeroes-1m", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0; SIZE]);
+                adler32_slice(&[0; SIZE]);
             });
         });
 
         group.bench_function("ones-1m", |bencher| {
             bencher.iter(|| {
-                adler::from_slice(&[0xff; SIZE]);
+                adler32_slice(&[0xff; SIZE]);
             });
         });
     }

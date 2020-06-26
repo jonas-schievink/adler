@@ -57,7 +57,7 @@ impl Adler32 {
     ///     "rust",
     ///     "acean",
     /// ];
-    /// let whole = adler::from_slice(b"rustacean");
+    /// let whole = adler::adler32_slice(b"rustacean");
     ///
     /// let mut sum = Adler32::new();
     /// sum.write_slice(parts[0].as_bytes());
@@ -145,8 +145,7 @@ impl Hasher for Adler32 {
 }
 
 /// Calculates the Adler-32 checksum of a byte slice.
-// FIXME: Rename this?
-pub fn from_slice(data: &[u8]) -> u32 {
+pub fn adler32_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write_slice(data);
     h.checksum()
@@ -158,32 +157,32 @@ mod tests {
 
     #[test]
     fn zeroes() {
-        assert_eq!(from_slice(&[]), 1);
-        assert_eq!(from_slice(&[0]), 1 | 1 << 16);
-        assert_eq!(from_slice(&[0, 0]), 1 | 2 << 16);
-        assert_eq!(from_slice(&[0; 100]), 0x00640001);
-        assert_eq!(from_slice(&[0; 1024]), 0x04000001);
-        assert_eq!(from_slice(&[0; 1024 * 1024]), 0x00f00001);
+        assert_eq!(adler32_slice(&[]), 1);
+        assert_eq!(adler32_slice(&[0]), 1 | 1 << 16);
+        assert_eq!(adler32_slice(&[0, 0]), 1 | 2 << 16);
+        assert_eq!(adler32_slice(&[0; 100]), 0x00640001);
+        assert_eq!(adler32_slice(&[0; 1024]), 0x04000001);
+        assert_eq!(adler32_slice(&[0; 1024 * 1024]), 0x00f00001);
     }
 
     #[test]
     fn ones() {
-        assert_eq!(from_slice(&[0xff; 1024]), 0x79a6fc2e);
-        assert_eq!(from_slice(&[0xff; 1024 * 1024]), 0x8e88ef11);
+        assert_eq!(adler32_slice(&[0xff; 1024]), 0x79a6fc2e);
+        assert_eq!(adler32_slice(&[0xff; 1024 * 1024]), 0x8e88ef11);
     }
 
     #[test]
     fn mixed() {
-        assert_eq!(from_slice(&[1]), 2 | 2 << 16);
-        assert_eq!(from_slice(&[40]), 41 | 41 << 16);
+        assert_eq!(adler32_slice(&[1]), 2 | 2 << 16);
+        assert_eq!(adler32_slice(&[40]), 41 | 41 << 16);
 
-        assert_eq!(from_slice(&[0xA5; 1024 * 1024]), 0xd5009ab1);
+        assert_eq!(adler32_slice(&[0xA5; 1024 * 1024]), 0xd5009ab1);
     }
 
     /// Example calculation from https://en.wikipedia.org/wiki/Adler-32.
     #[test]
     fn wiki() {
-        assert_eq!(from_slice(b"Wikipedia"), 0x11E60398);
+        assert_eq!(adler32_slice(b"Wikipedia"), 0x11E60398);
     }
 
     #[test]
