@@ -22,12 +22,13 @@ impl Adler32 {
     }
 
     /// Returns the calculated checksum at this point in time.
+    // FIXME: Rename to `checksum`?
     pub fn finish(&self) -> u32 {
         (u32::from(self.b) << 16) | u32::from(self.a)
     }
 
     /// Adds `bytes` to the checksum calculation.
-    pub fn write(&mut self, bytes: &[u8]) {
+    pub fn write_slice(&mut self, bytes: &[u8]) {
         // The basic algorithm is, for every byte:
         //   a = (a + byte) % MOD
         //   b = (b + a) % MOD
@@ -48,7 +49,7 @@ impl Adler32 {
         //   b_inc = n*65521 + n(n+1)/2*255
         // The max chunk size is thus the largest value of n so that b_inc <= 2^32-65521.
         //   2^32-65521 = n*65521 + n(n+1)/2*255
-        // Plugging this into an equation solve since I can't math gives n = 5552.18..., so 5552.
+        // Plugging this into an equation solver since I can't math gives n = 5552.18..., so 5552.
 
         const MOD: u32 = 65521;
         const CHUNK_SIZE: usize = 5552;
@@ -72,7 +73,7 @@ impl Adler32 {
 
 impl Default for Adler32 {
     fn default() -> Self {
-        Self { a: 1, b: 0 }
+        Adler32 { a: 1, b: 0 }
     }
 }
 
@@ -82,7 +83,7 @@ impl Hasher for Adler32 {
     }
 
     fn write(&mut self, bytes: &[u8]) {
-        self.write(bytes);
+        self.write_slice(bytes);
     }
 }
 
@@ -90,7 +91,7 @@ impl Hasher for Adler32 {
 // FIXME: Rename this?
 pub fn from_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
-    h.write(data);
+    h.write_slice(data);
     h.finish()
 }
 
