@@ -8,7 +8,7 @@ repository = "https://github.com/jonas-schievink/adler.git"
 keywords = ["checksum", "integrity", "hash", "adler32"]
 categories = ["algorithms"]
 readme = "README.md"
-license = "0BSD"
+license = "0BSD OR MIT OR Apache-2.0"
 
 [badges]
 travis-ci = { repository = "jonas-schievink/adler" }
@@ -42,7 +42,7 @@ replace = """
 
 No changes.
 
-## [{{version}} - {{date}}](https://github.com/jonas-schievink/adler/releases/tag/{{version}})
+## [{{version}} - {{date}}](https://github.com/jonas-schievink/adler/releases/tag/v{{version}})
 """
 
 # Bump the version inside the example manifest in `README.md`
