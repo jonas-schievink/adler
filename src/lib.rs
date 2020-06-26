@@ -25,8 +25,7 @@ impl Adler32 {
     }
 
     /// Returns the calculated checksum at this point in time.
-    // FIXME: Rename to `checksum`?
-    pub fn finish(&self) -> u32 {
+    pub fn checksum(&self) -> u32 {
         (u32::from(self.b) << 16) | u32::from(self.a)
     }
 
@@ -82,7 +81,7 @@ impl Default for Adler32 {
 
 impl Hasher for Adler32 {
     fn finish(&self) -> u64 {
-        u64::from(self.finish())
+        u64::from(self.checksum())
     }
 
     fn write(&mut self, bytes: &[u8]) {
@@ -95,7 +94,7 @@ impl Hasher for Adler32 {
 pub fn from_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write_slice(data);
-    h.finish()
+    h.checksum()
 }
 
 #[cfg(test)]
