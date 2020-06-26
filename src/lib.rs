@@ -1,4 +1,4 @@
-//! TODO: Write crate docs
+//! Adler-32 checksum implementation.
 
 #![doc(html_root_url = "https://docs.rs/adler/0.1.0")]
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
@@ -81,6 +81,7 @@ impl Hasher for Adler32 {
 }
 
 /// Calculates the Adler-32 checksum of a byte slice.
+// FIXME: Rename this?
 pub fn from_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write(data);
