@@ -15,6 +15,7 @@ releases.
 - Permissively licensed (0BSD) clean-room implementation.
 - Zero dependencies.
 - Decent performance (3-4 GB/s).
+- Supports `#![no_std]` (with `default-features = false`).
 
 ## Usage
 

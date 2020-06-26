@@ -21,6 +21,11 @@ harness = false
 [dev-dependencies]
 criterion = "0.3.2"
 
+[features]
+# Disable default features to enable `#![no_std]` support.
+default = ["std"]
+std = []
+
 # cargo-release configuration
 [package.metadata.release]
 tag-message = "{{version}}"

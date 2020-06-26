@@ -4,9 +4,12 @@
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-use core::hash::Hasher;
+#[cfg(not(feature = "std"))]
+extern crate core as std;
+
+use std::hash::Hasher;
 
 /// Adler-32 checksum calculator.
 #[derive(Debug, Copy, Clone)]
