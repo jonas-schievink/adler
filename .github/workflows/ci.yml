@@ -15,8 +15,6 @@ env:
   RUSTFLAGS: "--deny warnings"
   MSRV: 1.8.0
   NO_STD_TARGET: thumbv6m-none-eabi
-  TIMEOUT_MINS: 20
-
 jobs:
   test:
     strategy:
@@ -29,7 +27,6 @@ jobs:
           - macOS-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -44,7 +41,6 @@ jobs:
 
   no-std:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -58,7 +54,6 @@ jobs:
 
   msrv:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -71,7 +66,6 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
