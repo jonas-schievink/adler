@@ -1,10 +1,10 @@
 extern crate adler;
 extern crate criterion;
 
-use adler::adler32_slice;
+use adler::{adler32_slice, Adler32};
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 
-fn bench(c: &mut Criterion) {
+fn simple(c: &mut Criterion) {
     {
         const SIZE: usize = 100;
 
@@ -60,5 +60,50 @@ fn bench(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, bench);
+fn chunked(c: &mut Criterion) {
+    const SIZE: usize = 16 * 1024 * 1024;
+
+    let data = vec![0xAB; SIZE];
+
+    let mut group = c.benchmark_group("chunked-16m");
+    group.throughput(Throughput::Bytes(SIZE as u64));
+    group.bench_function("5552", |bencher| {
+        bencher.iter(|| {
+            let mut h = Adler32::new();
+            for chunk in data.chunks(5552) {
+                h.write_slice(chunk);
+            }
+            h.checksum()
+        });
+    });
+    group.bench_function("8k", |bencher| {
+        bencher.iter(|| {
+            let mut h = Adler32::new();
+            for chunk in data.chunks(8 * 1024) {
+                h.write_slice(chunk);
+            }
+            h.checksum()
+        });
+    });
+    group.bench_function("64k", |bencher| {
+        bencher.iter(|| {
+            let mut h = Adler32::new();
+            for chunk in data.chunks(64 * 1024) {
+                h.write_slice(chunk);
+            }
+            h.checksum()
+        });
+    });
+    group.bench_function("1m", |bencher| {
+        bencher.iter(|| {
+            let mut h = Adler32::new();
+            for chunk in data.chunks(1024 * 1024) {
+                h.write_slice(chunk);
+            }
+            h.checksum()
+        });
+    });
+}
+
+criterion_group!(benches, simple, chunked);
 criterion_main!(benches);
