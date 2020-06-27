@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes.
+- Bump MSRV to 1.31.0.
 
 ## [0.2.1 - 2020-06-27](https://github.com/jonas-schievink/adler/releases/tag/v0.2.1)
 
