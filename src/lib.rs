@@ -45,6 +45,7 @@ pub struct Adler32 {
 
 impl Adler32 {
     /// Creates a new Adler-32 instance with default state.
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -74,6 +75,7 @@ impl Adler32 {
     /// sum.write_slice(parts[1].as_bytes());
     /// assert_eq!(sum.checksum(), whole);
     /// ```
+    #[inline]
     pub fn from_checksum(sum: u32) -> Self {
         Adler32 {
             a: sum as u16,
@@ -82,6 +84,7 @@ impl Adler32 {
     }
 
     /// Returns the calculated checksum at this point in time.
+    #[inline]
     pub fn checksum(&self) -> u32 {
         (u32::from(self.b) << 16) | u32::from(self.a)
     }
@@ -134,12 +137,14 @@ impl Adler32 {
 }
 
 impl Default for Adler32 {
+    #[inline]
     fn default() -> Self {
         Adler32 { a: 1, b: 0 }
     }
 }
 
 impl Hasher for Adler32 {
+    #[inline]
     fn finish(&self) -> u64 {
         u64::from(self.checksum())
     }
