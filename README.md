@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/adler.svg)](https://crates.io/crates/adler)
 [![docs.rs](https://docs.rs/adler/badge.svg)](https://docs.rs/adler/)
-[![Build Status](https://travis-ci.org/jonas-schievink/adler.svg?branch=master)](https://travis-ci.org/jonas-schievink/adler)
+![CI](https://github.com/jonas-schievink/adler/workflows/CI/badge.svg)
 
 This crate provides a simple implementation of the Adler-32 checksum, used in
 zlib, rsync, and other software.
