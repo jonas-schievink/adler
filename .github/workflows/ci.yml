@@ -15,6 +15,7 @@ env:
   RUSTFLAGS: "--deny warnings"
   MSRV: 1.8.0
   NO_STD_TARGET: thumbv6m-none-eabi
+
 jobs:
   test:
     strategy:
