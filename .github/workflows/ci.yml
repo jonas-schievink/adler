@@ -39,7 +39,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run tests
-      if: matrix.rust != 1.8.0  # too old to build criterion
+      if: matrix.rust != "1.8.0"  # too old to build criterion
       run: cargo test --all --all-targets
 
   lint:
