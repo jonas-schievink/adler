@@ -31,9 +31,7 @@ crate's functionality.
 
 ## Rust version support
 
-Currently, this crate supports all Rust versions starting at Rust 1.8.0 (earlier
-versions are unsupported only because they cannot communicate with crates.io
-anymore).
+Currently, this crate supports all Rust versions starting at Rust 1.31.0.
 
 Bumping the Minimum Supported Rust Version (MSRV) is *not* considered a breaking
 change, but will not be done without good reasons. The latest 3 stable Rust
