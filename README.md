@@ -1,4 +1,4 @@
-# Adler-32 checksums
+# Adler-32 checksums for Rust
 
 [![crates.io](https://img.shields.io/crates/v/adler.svg)](https://crates.io/crates/adler)
 [![docs.rs](https://docs.rs/adler/badge.svg)](https://docs.rs/adler/)

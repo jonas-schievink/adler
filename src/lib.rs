@@ -165,13 +165,15 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
     let mut h = Adler32::new();
     loop {
-        let buf = reader.fill_buf()?;
-        if buf.is_empty() {
-            return Ok(h.checksum());
-        }
+        let len = {
+            let buf = try!(reader.fill_buf());
+            if buf.is_empty() {
+                return Ok(h.checksum());
+            }
 
-        h.write_slice(buf);
-        let len = buf.len();
+            h.write_slice(buf);
+            buf.len()
+        };
         reader.consume(len);
     }
 }
