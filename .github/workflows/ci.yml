@@ -50,7 +50,7 @@ jobs:
         override: true
         target: ${{ env.NO_STD_TARGET }}
     - name: Build
-      run: cargo build --verbose --target ${{ env.NO_STD_TARGET }}
+      run: cargo build --verbose --no-default-features --target ${{ env.NO_STD_TARGET }}
 
   msrv:
     runs-on: ubuntu-latest
