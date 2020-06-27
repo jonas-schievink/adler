@@ -31,8 +31,10 @@ crate's functionality.
 
 ## Rust version support
 
-This crate supports the 3 latest stable Rust releases. Bumping the minimum
-supported Rust version (MSRV) is not considered a breaking change as long as
-these 3 versions are still supported.
+Currently, this crate supports all Rust versions starting at Rust 1.8.0 (earlier
+versions are unsupported only because they cannot communicate with crates.io
+anymore).
 
-The MSRV is also explicitly tested against in [.travis.yml](.travis.yml).
+Bumping the Minimum Supported Rust Version (MSRV) is *not* considered a breaking
+change, but will not be done without good reasons. The latest 3 stable Rust
+versions will always be supported no matter what.
