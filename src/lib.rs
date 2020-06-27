@@ -12,7 +12,6 @@
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_debug_implementations)]
-#![allow(deprecated)] // `try!`
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
@@ -172,7 +171,7 @@ pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
     let mut h = Adler32::new();
     loop {
         let len = {
-            let buf = try!(reader.fill_buf());
+            let buf = reader.fill_buf()?;
             if buf.is_empty() {
                 return Ok(h.checksum());
             }
