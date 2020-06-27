@@ -11,7 +11,8 @@
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![warn(missing_debug_implementations, rust_2018_idioms)]
+#![warn(missing_debug_implementations)]
+#![allow(deprecated)] // `try!`
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
