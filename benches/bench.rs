@@ -8,7 +8,7 @@ fn simple(c: &mut Criterion) {
     {
         const SIZE: usize = 100;
 
-        let mut group = c.benchmark_group("100b");
+        let mut group = c.benchmark_group("simple-100b");
         group.throughput(Throughput::Bytes(SIZE as u64));
         group.bench_function("zeroes-100", |bencher| {
             bencher.iter(|| {
@@ -25,7 +25,7 @@ fn simple(c: &mut Criterion) {
     {
         const SIZE: usize = 1024;
 
-        let mut group = c.benchmark_group("1k");
+        let mut group = c.benchmark_group("simple-1k");
         group.throughput(Throughput::Bytes(SIZE as u64));
 
         group.bench_function("zeroes-1k", |bencher| {
@@ -44,7 +44,7 @@ fn simple(c: &mut Criterion) {
     {
         const SIZE: usize = 1024 * 1024;
 
-        let mut group = c.benchmark_group("1m");
+        let mut group = c.benchmark_group("simple-1m");
         group.throughput(Throughput::Bytes(SIZE as u64));
         group.bench_function("zeroes-1m", |bencher| {
             bencher.iter(|| {
