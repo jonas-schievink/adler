@@ -13,6 +13,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "--deny warnings"
+  MSRV: 1.8.0
+  NO_STD_TARGET: thumbv6m-none-eabi
+
+defaults:
+  timeout-minutes: 20
 
 jobs:
   test:
@@ -25,10 +30,6 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-        include:
-          # MSRV; does not work on macOS for unknown reasons
-          - os: ubuntu-latest
-            rust: 1.8.0
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -38,10 +39,34 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --all --all-targets
     - name: Run tests
-      if: matrix.rust != '1.8.0'  # too old to build criterion
       run: cargo test --all --all-targets
+
+  no-std:
+    runs-os: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        target: ${{ env.NO_STD_TARGET }}
+    - name: Build
+      run: cargo build --verbose --target ${{ env.NO_STD_TARGET }}
+
+  msrv:
+    runs-os: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ env.MSRV }}
+        override: true
+    - name: Build
+      run: cargo build --verbose
 
   lint:
     runs-on: ubuntu-latest
