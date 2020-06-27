@@ -19,13 +19,16 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.8.0
           - stable
           - nightly
         os:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
+        include:
+          # MSRV; does not work on macOS for unknown reasons
+          - os: ubuntu-latest
+            rust: 1.8.0
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
