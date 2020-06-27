@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes.
+- Add a few `#[inline]` annotations to small functions.
+- Fix CI badge.
+- Allow integration into libstd.
 
 ## [0.2.0 - 2020-06-27](https://github.com/jonas-schievink/adler/releases/tag/v0.2.0)
 
