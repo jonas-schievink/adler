@@ -1,6 +1,6 @@
 [package]
 name = "adler"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
 description = "A simple clean-room implementation of the Adler-32 checksum"
 documentation = "https://docs.rs/adler/"
