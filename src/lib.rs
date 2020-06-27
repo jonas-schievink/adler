@@ -10,6 +10,7 @@
 #![doc(html_root_url = "https://docs.rs/adler/0.1.0")]
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -17,6 +18,9 @@
 extern crate core as std;
 
 use std::hash::Hasher;
+
+#[cfg(feature = "std")]
+use std::io::{self, BufRead};
 
 /// Adler-32 checksum calculator.
 ///
@@ -151,9 +155,31 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
     h.checksum()
 }
 
+/// Calculates the Adler-32 checksum of a `BufRead`'s contents.
+///
+/// The passed `BufRead` implementor will be read until it reaches EOF.
+///
+/// If you only have a `Read` implementor, wrap it in `std::io::BufReader`.
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
+    let mut h = Adler32::new();
+    loop {
+        let buf = reader.fill_buf()?;
+        if buf.is_empty() {
+            return Ok(h.checksum());
+        }
+
+        h.write_slice(buf);
+        let len = buf.len();
+        reader.consume(len);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::BufReader;
 
     #[test]
     fn zeroes() {
@@ -198,5 +224,20 @@ mod tests {
         let mut adler = Adler32::from_checksum(partial);
         adler.write_slice(&[0xff; 1024 * 1024 - 1024]);
         assert_eq!(adler.checksum(), 0x8e88ef11); // from above
+    }
+
+    #[test]
+    fn bufread() {
+        fn test(data: &[u8], checksum: u32) {
+            // `BufReader` uses an 8 KB buffer, so this will test buffer refilling.
+            let mut buf = BufReader::new(data);
+            let real_sum = adler32_reader(&mut buf).unwrap();
+            assert_eq!(checksum, real_sum);
+        }
+
+        test(&[], 1);
+        test(&[0; 1024], 0x04000001);
+        test(&[0; 1024 * 1024], 0x00f00001);
+        test(&[0xA5; 1024 * 1024], 0xd5009ab1);
     }
 }

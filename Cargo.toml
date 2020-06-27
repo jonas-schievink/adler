@@ -26,6 +26,9 @@ criterion = "0.3.2"
 default = ["std"]
 std = []
 
+[package.metadata.docs.rs]
+rustdoc-args = [ "--cfg docsrs" ]
+
 # cargo-release configuration
 [package.metadata.release]
 tag-message = "{{version}}"
