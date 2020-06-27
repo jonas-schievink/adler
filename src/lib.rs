@@ -7,7 +7,7 @@
 //! - Decent performance (3-4 GB/s).
 //! - `#![no_std]` support (with `default-features = false`).
 
-#![doc(html_root_url = "https://docs.rs/adler/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/adler/0.2.1")]
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No changes.
+
+## [0.2.1 - 2020-06-27](https://github.com/jonas-schievink/adler/releases/tag/v0.2.1)
+
 - Add a few `#[inline]` annotations to small functions.
 - Fix CI badge.
 - Allow integration into libstd.
