@@ -15,9 +15,7 @@ env:
   RUSTFLAGS: "--deny warnings"
   MSRV: 1.8.0
   NO_STD_TARGET: thumbv6m-none-eabi
-
-defaults:
-  timeout-minutes: 20
+  TIMEOUT_MINS: 20
 
 jobs:
   test:
@@ -31,6 +29,7 @@ jobs:
           - macOS-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -44,7 +43,8 @@ jobs:
       run: cargo test --all --all-targets
 
   no-std:
-    runs-os: ubuntu-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -57,7 +57,8 @@ jobs:
       run: cargo build --verbose --target ${{ env.NO_STD_TARGET }}
 
   msrv:
-    runs-os: ubuntu-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -70,6 +71,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: ${{ env.TIMEOUT_MINS }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
