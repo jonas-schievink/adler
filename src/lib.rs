@@ -150,7 +150,7 @@ impl Adler32 {
         let (pre_bytes, aligned_bytes, post_bytes) = unsafe {
             // safe to do because we aren't actually reinterpreting bytes--
             // only making sure we do aligned accesses in the main loop
-            bytes.align_to::<[u8; 4]>()
+            bytes.align_to::<U8X4>()
         };
 
         // start with serial iteration until we hit a memory-aligned offset into the slice
@@ -231,16 +231,20 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 }
 
 #[derive(Copy, Clone)]
+#[repr(align(4))]
+struct U8X4([u8; 4]);
+
+#[derive(Copy, Clone)]
 struct U32X4([u32; 4]);
 
 impl U32X4 {
     #[inline]
-    fn from(bytes: &[u8; 4]) -> Self {
+    fn from(bytes: &U8X4) -> Self {
         U32X4([
-            u32::from(bytes[0]),
-            u32::from(bytes[1]),
-            u32::from(bytes[2]),
-            u32::from(bytes[3]),
+            u32::from(bytes.0[0]),
+            u32::from(bytes.0[1]),
+            u32::from(bytes.0[2]),
+            u32::from(bytes.0[3]),
         ])
     }
     fn iter(&self) -> std::slice::Iter<u32> {
@@ -308,6 +312,15 @@ mod tests {
     fn ones() {
         assert_eq!(adler32_slice(&[0xff; 1024]), 0x79a6fc2e);
         assert_eq!(adler32_slice(&[0xff; 1024 * 1024]), 0x8e88ef11);
+    }
+
+    #[test]
+    fn unaligned() {
+        let buf = [0xe7; 1024];
+        assert_eq!(adler32_slice(&buf[0..1021]), 0x6c739979);
+        assert_eq!(adler32_slice(&buf[1..1022]), 0x6c739979);
+        assert_eq!(adler32_slice(&buf[2..1023]), 0x6c739979);
+        assert_eq!(adler32_slice(&buf[3..]), 0x6c739979);
     }
 
     #[test]
