@@ -18,6 +18,7 @@
 extern crate core as std;
 
 use std::hash::Hasher;
+use std::ops::{AddAssign, RemAssign};
 
 #[cfg(feature = "std")]
 use std::io::{self, BufRead};
@@ -114,22 +115,91 @@ impl Adler32 {
         // The max chunk size is thus the largest value of n so that b_inc <= 2^32-65521.
         //   2^32-65521 = n*65521 + n(n+1)/2*255
         // Plugging this into an equation solver since I can't math gives n = 5552.18..., so 5552.
+        //
+        // On top of the optimization outlined above, the algorithm can also be parallelized with a
+        // bit more work:
+        //
+        // Note that b is a linear combination of a vector of input bytes (D1, ..., Dn).
+        //
+        // If we fix some value k<N and rewrite indices 1, ..., N as
+        //
+        //   1_1, 1_2, ..., 1_k, 2_1, ..., 2_k, ..., (N/k)_k,
+        //
+        // then we can express a and b in terms of sums of smaller sequences kb and ka:
+        //
+        //   ka(j) := D1_j + D2_j + ... + D(N/k)_j where j <= k
+        //   kb(j) := (N\k)*D1_j + (N/k-1)*D2_j + ... + D(N/k)_j where j <= k
+        //
+        //  a = ka(1) + ka(2) + ... + ka(k) + 1
+        //  b = k*(kb(1) + kb(2) + ... + kb(k)) - 1*ka(2) - ...  - (k-1)*ka(k) + N
+        //
+        // We use this insight to unroll the main loop and process 4 bytes at a time.
+        // The resulting code is higly amenable to auto-vectorization.
+        //
+        // This technique is described in-depth (here:)[https://software.intel.com/content/www/us/\
+        // en/develop/articles/fast-computation-of-fletcher-checksums.html]
 
         const MOD: u32 = 65521;
         const CHUNK_SIZE: usize = 5552;
 
         let mut a = u32::from(self.a);
         let mut b = u32::from(self.b);
-        for chunk in bytes.chunks(CHUNK_SIZE) {
-            for byte in chunk {
-                let val = u32::from(*byte);
-                a += val;
+        let mut a_vec = U32X4([0; 4]);
+        let mut b_vec = a_vec;
+
+        let (pre_bytes, aligned_bytes, post_bytes) = unsafe {
+            // safe to do because we aren't actually reinterpreting bytes--
+            // only making sure we do aligned accesses in the main loop
+            bytes.align_to::<[u8; 4]>()
+        };
+
+        // start with serial iteration until we hit a memory-aligned offset into the slice
+        for chunk in pre_bytes.chunks(CHUNK_SIZE) {
+            for &byte in chunk {
+                a += u32::from(byte);
                 b += a;
             }
-
             a %= MOD;
             b %= MOD;
         }
+        a %= MOD;
+        b %= MOD;
+
+        // iterate in parallel
+        for chunk in aligned_bytes.chunks(CHUNK_SIZE) {
+            for byte_vec in chunk {
+                let val = U32X4::from(byte_vec);
+                a_vec += val;
+                b_vec += a_vec;
+                b += 4 * a;
+            }
+            a_vec %= MOD;
+            b_vec %= MOD;
+            b %= MOD;
+        }
+        a_vec %= MOD;
+        b_vec %= MOD;
+        b %= MOD;
+        // combine the sub-sum results into the main sum
+        for ((i, av), bv) in a_vec.iter().enumerate().zip(b_vec.iter()) {   
+            a += av;
+            // "subtraction" in modular arithmetic by a value i is
+            // actually addition by the additive inverse, MOD - i
+            b += 4 * bv + (MOD - i as u32) * av;
+            b %= MOD;
+        }
+        a %= MOD;
+
+        // compute the rest of the sum in serial
+        for chunk in post_bytes.chunks(CHUNK_SIZE) {
+            for &byte in chunk {
+                a += u32::from(byte);
+                b += a;
+            }
+            a %= MOD;
+            b %= MOD;
+        }
+        
         self.a = a as u16;
         self.b = b as u16;
     }
@@ -158,6 +228,42 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write_slice(data);
     h.checksum()
+}
+
+#[derive(Copy, Clone)]
+struct U32X4 ([u32; 4]);
+
+impl U32X4 {
+    #[inline]
+    fn from(bytes: &[u8; 4]) -> Self {
+        U32X4([
+            u32::from(bytes[0]),
+            u32::from(bytes[1]),
+            u32::from(bytes[2]),
+            u32::from(bytes[3]),
+        ])
+    }
+    fn iter(&self) -> std::slice::Iter<u32> {
+        self.0.iter()
+    }
+}
+
+impl AddAssign<Self> for U32X4 {
+    #[inline]
+    fn add_assign(&mut self, other: Self) {
+        for (s, o) in self.0.iter_mut().zip(other.0.iter()) {
+            *s += o;
+        } 
+    }
+}
+
+impl RemAssign<u32> for U32X4 {
+    #[inline]
+    fn rem_assign(&mut self, quotient: u32) {
+        for s in self.0.iter_mut() {
+            *s %= quotient;
+        }
+    }
 }
 
 /// Calculates the Adler-32 checksum of a `BufRead`'s contents.
