@@ -181,7 +181,7 @@ impl Adler32 {
         b_vec %= MOD;
         b %= MOD;
         // combine the sub-sum results into the main sum
-        for ((i, av), bv) in a_vec.iter().enumerate().zip(b_vec.iter()) {   
+        for ((i, av), bv) in a_vec.iter().enumerate().zip(b_vec.iter()) {
             a += av;
             // "subtraction" in modular arithmetic by a value i is
             // actually addition by the additive inverse, MOD - i
@@ -199,7 +199,7 @@ impl Adler32 {
             a %= MOD;
             b %= MOD;
         }
-        
+
         self.a = a as u16;
         self.b = b as u16;
     }
@@ -231,7 +231,7 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 }
 
 #[derive(Copy, Clone)]
-struct U32X4 ([u32; 4]);
+struct U32X4([u32; 4]);
 
 impl U32X4 {
     #[inline]
@@ -253,7 +253,7 @@ impl AddAssign<Self> for U32X4 {
     fn add_assign(&mut self, other: Self) {
         for (s, o) in self.0.iter_mut().zip(other.0.iter()) {
             *s += o;
-        } 
+        }
     }
 }
 
