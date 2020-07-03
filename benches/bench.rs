@@ -23,6 +23,23 @@ fn simple(c: &mut Criterion) {
     }
 
     {
+        const SIZE: usize = 512;
+
+        let mut group = c.benchmark_group("simple-512b");
+        group.throughput(Throughput::Bytes(SIZE as u64));
+        group.bench_function("zeroes-512", |bencher| {
+            bencher.iter(|| {
+                adler32_slice(&[0; SIZE]);
+            });
+        });
+        group.bench_function("ones-512", |bencher| {
+            bencher.iter(|| {
+                adler32_slice(&[0xff; SIZE]);
+            });
+        });
+    }
+
+    {
         const SIZE: usize = 1024;
 
         let mut group = c.benchmark_group("simple-1k");
