@@ -2,7 +2,7 @@ extern crate adler;
 extern crate criterion;
 
 use adler::{adler32_slice, Adler32};
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 fn simple(c: &mut Criterion) {
     {
@@ -16,23 +16,6 @@ fn simple(c: &mut Criterion) {
             });
         });
         group.bench_function("ones-100", |bencher| {
-            bencher.iter(|| {
-                adler32_slice(&[0xff; SIZE]);
-            });
-        });
-    }
-
-    {
-        const SIZE: usize = 512;
-
-        let mut group = c.benchmark_group("simple-512b");
-        group.throughput(Throughput::Bytes(SIZE as u64));
-        group.bench_function("zeroes-512", |bencher| {
-            bencher.iter(|| {
-                adler32_slice(&[0; SIZE]);
-            });
-        });
-        group.bench_function("ones-512", |bencher| {
             bencher.iter(|| {
                 adler32_slice(&[0xff; SIZE]);
             });
@@ -122,5 +105,26 @@ fn chunked(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, simple, chunked);
+fn compare_input_sizes(c: &mut Criterion) {
+    const SIZE: usize = 2048;
+    const INCR: usize = 128;
+
+    let data = vec![0xff; SIZE];
+
+    let mut group = c.benchmark_group("compare-input-size");
+    for size_increment in 1..=SIZE / INCR {
+        let size = size_increment * INCR;
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_with_input(
+            BenchmarkId::from_parameter(size),
+            &data[0..size],
+            |bencher, d| {
+                bencher.iter(|| adler32_slice(d));
+            },
+        );
+    }
+    group.finish();
+}
+
+criterion_group!(benches, simple, chunked, compare_input_sizes);
 criterion_main!(benches);
