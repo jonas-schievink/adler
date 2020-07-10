@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes.
+- Process 4 Bytes at a time, improving performance by up to 50% ([#2]).
 
 ## [0.2.2 - 2020-06-27](https://github.com/jonas-schievink/adler/releases/tag/v0.2.2)
 
@@ -24,3 +24,6 @@ No changes.
 ## [0.1.0 - 2020-06-26](https://github.com/jonas-schievink/adler/releases/tag/v0.1.0)
 
 Initial release.
+
+
+[#2]: https://github.com/jonas-schievink/adler/pull/2
