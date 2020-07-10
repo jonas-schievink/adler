@@ -19,7 +19,7 @@
 extern crate core as std;
 
 use std::hash::Hasher;
-use std::ops::{AddAssign, RemAssign, MulAssign};
+use std::ops::{AddAssign, MulAssign, RemAssign};
 
 #[cfg(feature = "std")]
 use std::io::{self, BufRead};
@@ -158,7 +158,7 @@ impl Adler32 {
             for byte_vec in chunk.chunks_exact(4) {
                 let val = U32X4::from(byte_vec);
                 a_vec += val;
-                b_vec += a_vec; 
+                b_vec += a_vec;
             }
             b += CHUNK_SIZE as u32 * a;
             a_vec %= MOD;
@@ -169,7 +169,7 @@ impl Adler32 {
         for byte_vec in remainder_chunk.chunks_exact(4) {
             let val = U32X4::from(byte_vec);
             a_vec += val;
-            b_vec += a_vec; 
+            b_vec += a_vec;
         }
         b += remainder_chunk.len() as u32 * a;
         a_vec %= MOD;
