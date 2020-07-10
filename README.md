@@ -23,7 +23,7 @@ Add an entry to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adler = "0.2.2"
+adler = "0.2.3"
 ```
 
 Check the [API Documentation](https://docs.rs/adler/) for how to use the
