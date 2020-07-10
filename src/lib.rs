@@ -12,13 +12,14 @@
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_debug_implementations)]
+#![forbid(unsafe_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "unsafe"), forbid(unsafe_code))]
 
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
 use std::hash::Hasher;
+use std::ops::{AddAssign, RemAssign, MulAssign};
 
 #[cfg(feature = "std")]
 use std::io::{self, BufRead};
@@ -94,173 +95,107 @@ impl Adler32 {
     /// If efficiency matters, this should be called with Byte slices that contain at least a few
     /// thousand Bytes.
     pub fn write_slice(&mut self, bytes: &[u8]) {
-        let (a, b) = checksum_loop(u32::from(self.a), u32::from(self.b), bytes);
+        // The basic algorithm is, for every byte:
+        //   a = (a + byte) % MOD
+        //   b = (b + a) % MOD
+        // where MOD = 65521.
+        //
+        // For efficiency, we can defer the `% MOD` operations as long as neither a nor b overflows:
+        // - Between calls to `write`, we ensure that a and b are always in range 0..MOD.
+        // - We use 32-bit arithmetic in this function.
+        // - Therefore, a and b must not increase by more than 2^32-MOD without performing a `% MOD`
+        //   operation.
+        //
+        // According to Wikipedia, b is calculated as follows for non-incremental checksumming:
+        //   b = n×D1 + (n−1)×D2 + (n−2)×D3 + ... + Dn + n*1 (mod 65521)
+        // Where n is the number of bytes and Di is the i-th Byte. We need to change this to account
+        // for the previous values of a and b, as well as treat every input Byte as being 255:
+        //   b_inc = n×255 + (n-1)×255 + ... + 255 + n*65520
+        // Or in other words:
+        //   b_inc = n*65520 + n(n+1)/2*255
+        // The max chunk size is thus the largest value of n so that b_inc <= 2^32-65521.
+        //   2^32-65521 = n*65520 + n(n+1)/2*255
+        // Plugging this into an equation solver since I can't math gives n = 5552.18..., so 5552.
+        //
+        // On top of the optimization outlined above, the algorithm can also be parallelized with a
+        // bit more work:
+        //
+        // Note that b is a linear combination of a vector of input bytes (D1, ..., Dn).
+        //
+        // If we fix some value k<N and rewrite indices 1, ..., N as
+        //
+        //   1_1, 1_2, ..., 1_k, 2_1, ..., 2_k, ..., (N/k)_k,
+        //
+        // then we can express a and b in terms of sums of smaller sequences kb and ka:
+        //
+        //   ka(j) := D1_j + D2_j + ... + D(N/k)_j where j <= k
+        //   kb(j) := (N/k)*D1_j + (N/k-1)*D2_j + ... + D(N/k)_j where j <= k
+        //
+        //  a = ka(1) + ka(2) + ... + ka(k) + 1
+        //  b = k*(kb(1) + kb(2) + ... + kb(k)) - 1*ka(2) - ...  - (k-1)*ka(k) + N
+        //
+        // We use this insight to unroll the main loop and process k=4 bytes at a time.
+        // The resulting code is highly amenable to SIMD acceleration, although the immediate speedups
+        // stem from increased pipeline parallelism rather than auto-vectorization.
+        //
+        // This technique is described in-depth (here:)[https://software.intel.com/content/www/us/\
+        // en/develop/articles/fast-computation-of-fletcher-checksums.html]
 
-        self.a = a as u16;
-        self.b = b as u16;
-    }
-}
+        const MOD: u32 = 65521;
+        const CHUNK_SIZE: usize = 5552 * 4;
 
-// The basic algorithm is, for every byte:
-//   a = (a + byte) % MOD
-//   b = (b + a) % MOD
-// where MOD = 65521.
-//
-// For efficiency, we can defer the `% MOD` operations as long as neither a nor b overflows:
-// - Between calls to `write`, we ensure that a and b are always in range 0..MOD.
-// - We use 32-bit arithmetic in this function.
-// - Therefore, a and b must not increase by more than 2^32-MOD without performing a `% MOD`
-//   operation.
-//
-// According to Wikipedia, b is calculated as follows for non-incremental checksumming:
-//   b = n×D1 + (n−1)×D2 + (n−2)×D3 + ... + Dn + n*1 (mod 65521)
-// Where n is the number of bytes and Di is the i-th Byte. We need to change this to account
-// for the previous values of a and b, as well as treat every input Byte as being 255:
-//   b_inc = n×255 + (n-1)×255 + ... + 255 + n*65520
-// Or in other words:
-//   b_inc = n*65520 + n(n+1)/2*255
-// The max chunk size is thus the largest value of n so that b_inc <= 2^32-65521.
-//   2^32-65521 = n*65520 + n(n+1)/2*255
-// Plugging this into an equation solver since I can't math gives n = 5552.18..., so 5552.
+        let mut a = u32::from(self.a);
+        let mut b = u32::from(self.b);
+        let mut a_vec = U32X4([0; 4]);
+        let mut b_vec = a_vec;
 
-const MOD: u32 = 65521;
-const CHUNK_SIZE: usize = 5552;
+        let (bytes, remainder) = bytes.split_at(bytes.len() - bytes.len() % 4);
 
-#[cfg(not(feature = "unsafe"))]
-fn checksum_loop(mut a: u32, mut b: u32, bytes: &[u8]) -> (u32, u32) {
-    for chunk in bytes.chunks(CHUNK_SIZE) {
-        for byte in chunk {
-            let val = u32::from(*byte);
-            a += val;
-            b += a;
+        // iterate over 4 bytes at a time
+        let chunk_iter = bytes.chunks_exact(CHUNK_SIZE);
+        let remainder_chunk = chunk_iter.remainder();
+        for chunk in chunk_iter {
+            for byte_vec in chunk.chunks_exact(4) {
+                let val = U32X4::from(byte_vec);
+                a_vec += val;
+                b_vec += a_vec; 
+            }
+            b += CHUNK_SIZE as u32 * a;
+            a_vec %= MOD;
+            b_vec %= MOD;
+            b %= MOD;
         }
-        a %= MOD;
-        b %= MOD;
-    }
-    (a, b)
-}
-
-// On top of the optimization outlined above, the algorithm can also be parallelized with a
-// bit more work:
-//
-// Note that b is a linear combination of a vector of input bytes (D1, ..., Dn).
-//
-// If we fix some value k<N and rewrite indices 1, ..., N as
-//
-//   1_1, 1_2, ..., 1_k, 2_1, ..., 2_k, ..., (N/k)_k,
-//
-// then we can express a and b in terms of sums of smaller sequences kb and ka:
-//
-//   ka(j) := D1_j + D2_j + ... + D(N/k)_j where j <= k
-//   kb(j) := (N/k)*D1_j + (N/k-1)*D2_j + ... + D(N/k)_j where j <= k
-//
-//  a = ka(1) + ka(2) + ... + ka(k) + 1
-//  b = k*(kb(1) + kb(2) + ... + kb(k)) - 1*ka(2) - ...  - (k-1)*ka(k) + N
-//
-// We use this insight to unroll the main loop and process k=4 bytes at a time.
-// The resulting code is highly amenable to SIMD acceleration, although the immediate speedups
-// stem from increased pipeline parallelism rather than auto-vectorization.
-//
-// This technique is described in-depth (here:)[https://software.intel.com/content/www/us/\
-// en/develop/articles/fast-computation-of-fletcher-checksums.html]
-
-#[cfg(feature = "unsafe")]
-fn checksum_loop(a: u32, b: u32, bytes: &[u8]) -> (u32, u32) {
-    let (pre_bytes, aligned_bytes, post_bytes) = split_sum::split_into_byte_arrays(bytes);
-
-    let (mut a, mut b) = split_sum::serial_checksum_loop(a, b, pre_bytes);
-    let mut a_vec = split_sum::U32X4([0; 4]);
-    let mut b_vec = a_vec;
-
-    for chunk in aligned_bytes.chunks(CHUNK_SIZE) {
-        for byte_vec in chunk {
-            a_vec += split_sum::U32X4::from(byte_vec);
-            b_vec += a_vec;
+        // special-case the final chunk because it may be shorter than the rest
+        for byte_vec in remainder_chunk.chunks_exact(4) {
+            let val = U32X4::from(byte_vec);
+            a_vec += val;
+            b_vec += a_vec; 
         }
-        b += a * 4 * chunk.len() as u32;
+        b += remainder_chunk.len() as u32 * a;
         a_vec %= MOD;
         b_vec %= MOD;
         b %= MOD;
-    }
 
-    // combine the sub-sum results into the main sum
-    b_vec *= 4;
-    b_vec.0[1] += MOD - a_vec.0[1];
-    b_vec.0[2] += (MOD - a_vec.0[2]) * 2;
-    b_vec.0[3] += (MOD - a_vec.0[3]) * 3;
-    for &av in a_vec.0.iter() {
-        a += av;
-    }
-    for &bv in b_vec.0.iter() {
-        b += bv;
-    }
-    a %= MOD;
-    b %= MOD;
+        // combine the sub-sum results into the main sum
+        b_vec *= 4;
+        b_vec.0[1] += MOD - a_vec.0[1];
+        b_vec.0[2] += (MOD - a_vec.0[2]) * 2;
+        b_vec.0[3] += (MOD - a_vec.0[3]) * 3;
+        for &av in a_vec.0.iter() {
+            a += av;
+        }
+        for &bv in b_vec.0.iter() {
+            b += bv;
+        }
 
-    split_sum::serial_checksum_loop(a, b, post_bytes)
-}
-
-#[cfg(feature = "unsafe")]
-mod split_sum {
-    use super::*;
-    use std::ops::{AddAssign, MulAssign, RemAssign};
-
-    pub fn serial_checksum_loop(mut a: u32, mut b: u32, bytes: &[u8]) -> (u32, u32) {
-        // we expect this slice to be small enough that per-element
-        // mod is cheaper on average
-        for &byte in bytes {
+        // iterate over the remaining few bytes in serial
+        for &byte in remainder.iter() {
             a += u32::from(byte);
-            a -= (a >= MOD) as u32 * MOD;
             b += a;
-            b -= (b >= MOD) as u32 * MOD;
         }
-        (a, b)
-    }
 
-    pub fn split_into_byte_arrays(bytes: &[u8]) -> (&[u8], &[[u8; 4]], &[u8]) {
-        unsafe {
-            // safe to do because we aren't actually reinterpreting bytes--
-            // only changing the way we group them
-            bytes.align_to::<[u8; 4]>()
-        }
-    }
-
-    #[derive(Copy, Clone)]
-    pub struct U32X4(pub [u32; 4]);
-
-    impl U32X4 {
-        pub fn from(bytes: &[u8; 4]) -> Self {
-            U32X4([
-                u32::from(bytes[0]),
-                u32::from(bytes[1]),
-                u32::from(bytes[2]),
-                u32::from(bytes[3]),
-            ])
-        }
-    }
-
-    impl AddAssign<Self> for U32X4 {
-        fn add_assign(&mut self, other: Self) {
-            for (s, o) in self.0.iter_mut().zip(other.0.iter()) {
-                *s += o;
-            }
-        }
-    }
-
-    impl RemAssign<u32> for U32X4 {
-        fn rem_assign(&mut self, quotient: u32) {
-            for s in self.0.iter_mut() {
-                *s %= quotient;
-            }
-        }
-    }
-
-    impl MulAssign<u32> for U32X4 {
-        fn mul_assign(&mut self, rhs: u32) {
-            for s in self.0.iter_mut() {
-                *s *= rhs;
-            }
-        }
+        self.a = (a % MOD) as u16;
+        self.b = (b % MOD) as u16;
     }
 }
 
@@ -287,6 +222,44 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write_slice(data);
     h.checksum()
+}
+
+#[derive(Copy, Clone)]
+struct U32X4([u32; 4]);
+
+impl U32X4 {
+    fn from(bytes: &[u8]) -> Self {
+        U32X4([
+            u32::from(bytes[0]),
+            u32::from(bytes[1]),
+            u32::from(bytes[2]),
+            u32::from(bytes[3]),
+        ])
+    }
+}
+
+impl AddAssign<Self> for U32X4 {
+    fn add_assign(&mut self, other: Self) {
+        for (s, o) in self.0.iter_mut().zip(other.0.iter()) {
+            *s += o;
+        }
+    }
+}
+
+impl RemAssign<u32> for U32X4 {
+    fn rem_assign(&mut self, quotient: u32) {
+        for s in self.0.iter_mut() {
+            *s %= quotient;
+        }
+    }
+}
+
+impl MulAssign<u32> for U32X4 {
+    fn mul_assign(&mut self, rhs: u32) {
+        for s in self.0.iter_mut() {
+            *s *= rhs;
+        }
+    }
 }
 
 /// Calculates the Adler-32 checksum of a `BufRead`'s contents.
@@ -331,15 +304,6 @@ mod tests {
     fn ones() {
         assert_eq!(adler32_slice(&[0xff; 1024]), 0x79a6fc2e);
         assert_eq!(adler32_slice(&[0xff; 1024 * 1024]), 0x8e88ef11);
-    }
-
-    #[test]
-    fn unaligned() {
-        let buf = [0xe7; 1024];
-        assert_eq!(adler32_slice(&buf[0..1021]), 0x6c739979);
-        assert_eq!(adler32_slice(&buf[1..1022]), 0x6c739979);
-        assert_eq!(adler32_slice(&buf[2..1023]), 0x6c739979);
-        assert_eq!(adler32_slice(&buf[3..1024]), 0x6c739979);
     }
 
     #[test]
