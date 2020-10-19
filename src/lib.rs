@@ -151,7 +151,6 @@ pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufReader;
 
     #[test]
     fn zeroes() {
@@ -198,8 +197,10 @@ mod tests {
         assert_eq!(adler.checksum(), 0x8e88ef11); // from above
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn bufread() {
+        use std::io::BufReader;
         fn test(data: &[u8], checksum: u32) {
             // `BufReader` uses an 8 KB buffer, so this will test buffer refilling.
             let mut buf = BufReader::new(data);
