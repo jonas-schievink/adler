@@ -5,7 +5,7 @@
 ![CI](https://github.com/jonas-schievink/adler/workflows/CI/badge.svg)
 
 This crate provides a simple implementation of the Adler-32 checksum, used in
-zlib, rsync, and other software.
+the zlib compression format.
 
 Please refer to the [changelog](CHANGELOG.md) to see what changed in the last
 releases.
