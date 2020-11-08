@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes.
+### Fixes
+
+- Fix documentation on docs.rs.
 
 ## [1.0.0 - 2020-11-08](https://github.com/jonas-schievink/adler/releases/tag/v1.0.0)
 
