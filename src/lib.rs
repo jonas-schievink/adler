@@ -133,7 +133,7 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 /// If you only have a `Read` implementor, wrap it in `std::io::BufReader`.
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-pub fn adler32<R: BufRead>(reader: &mut R) -> io::Result<u32> {
+pub fn adler32<R: BufRead>(mut reader: R) -> io::Result<u32> {
     let mut h = Adler32::new();
     loop {
         let len = {
