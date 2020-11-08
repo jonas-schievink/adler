@@ -33,8 +33,8 @@ use std::io::{self, BufRead};
 ///
 /// This type also implements `Hasher`, which makes it easy to calculate Adler-32 checksums of any
 /// type that implements or derives `Hash`. This also allows using Adler-32 in a `HashMap`, although
-/// that is not recommended (while every checksum is a hash, they are not necessarily good at being
-/// one).
+/// that is not recommended (while every checksum is a hash function, they are not necessarily a
+/// good one).
 ///
 /// [`new`]: #method.new
 /// [`from_checksum`]: #method.from_checksum
