@@ -24,7 +24,7 @@ Add an entry to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adler = "0.2.3"
+adler = "1.0.0"
 ```
 
 Check the [API Documentation](https://docs.rs/adler/) for how to use the
