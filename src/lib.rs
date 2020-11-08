@@ -133,7 +133,7 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 /// If you only have a `Read` implementor, wrap it in `std::io::BufReader`.
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
+pub fn adler32<R: BufRead>(reader: &mut R) -> io::Result<u32> {
     let mut h = Adler32::new();
     loop {
         let len = {
@@ -205,7 +205,7 @@ mod tests {
         fn test(data: &[u8], checksum: u32) {
             // `BufReader` uses an 8 KB buffer, so this will test buffer refilling.
             let mut buf = BufReader::new(data);
-            let real_sum = adler32_reader(&mut buf).unwrap();
+            let real_sum = adler32(&mut buf).unwrap();
             assert_eq!(checksum, real_sum);
         }
 
