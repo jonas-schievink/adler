@@ -10,10 +10,6 @@ categories = ["algorithms"]
 readme = "README.md"
 license = "0BSD OR MIT OR Apache-2.0"
 
-[badges]
-travis-ci = { repository = "jonas-schievink/adler" }
-maintenance = { status = "actively-developed" }
-
 [[bench]]
 name = "bench"
 harness = false
