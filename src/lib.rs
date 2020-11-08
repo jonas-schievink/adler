@@ -37,6 +37,42 @@ use std::io::{self, BufRead};
 /// that is not recommended (while every checksum is a hash function, they are not necessarily a
 /// good one).
 ///
+/// # Examples
+///
+/// Basic, piecewise checksum calculation:
+///
+/// ```
+/// use adler::Adler32;
+///
+/// let mut adler = Adler32::new();
+///
+/// adler.write_slice(&[0, 1, 2]);
+/// adler.write_slice(&[3, 4, 5]);
+///
+/// assert_eq!(adler.checksum(), 0x00290010);
+/// ```
+///
+/// Using `Hash` to process structures:
+///
+/// ```
+/// use std::hash::Hash;
+/// use adler::Adler32;
+///
+/// #[derive(Hash)]
+/// struct Data {
+///     byte: u8,
+///     word: u16,
+///     big: u64,
+/// }
+///
+/// let mut adler = Adler32::new();
+///
+/// let data = Data { byte: 0x1F, word: 0xABCD, big: !0 };
+/// data.hash(&mut adler);
+///
+/// assert_eq!(adler.checksum(), 0x33410990);
+/// ```
+///
 /// [`new`]: #method.new
 /// [`from_checksum`]: #method.from_checksum
 /// [`checksum`]: #method.checksum
