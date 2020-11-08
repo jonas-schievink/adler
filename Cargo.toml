@@ -34,7 +34,7 @@ rustc-dep-of-std = ['core', 'compiler_builtins']
 
 
 [package.metadata.docs.rs]
-rustdoc-args = [ "--cfg docsrs" ]
+rustdoc-args = [ "--cfg=docsrs" ]
 
 # cargo-release configuration
 [package.metadata.release]
