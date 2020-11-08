@@ -2,7 +2,20 @@
 
 ## Unreleased
 
-No changes.
+### Fixes
+
+- Fix `cargo test --no-default-features` ([#5]).
+
+### Improvements
+
+- Extended and clarified documentation.
+- Added more rustdoc examples.
+- Extended CI to test the crate with `--no-default-features`.
+
+### Breaking Changes
+
+- `adler32_reader` now takes its generic argument by value instead of as a `&mut`.
+- Renamed `adler32_reader` to `adler32`.
 
 ## [0.2.3 - 2020-07-11](https://github.com/jonas-schievink/adler/releases/tag/v0.2.3)
 
@@ -31,3 +44,4 @@ Initial release.
 
 
 [#2]: https://github.com/jonas-schievink/adler/pull/2
+[#5]: https://github.com/jonas-schievink/adler/pull/5
