@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No changes.
+
+## [1.0.2 - 2021-02-26](https://github.com/jonas-schievink/adler/releases/tag/v1.0.2)
+
 - Fix doctest on big-endian systems ([#9]).
 
 [#9]: https://github.com/jonas-schievink/adler/pull/9
