@@ -70,7 +70,14 @@ use std::io::{self, BufRead};
 /// let data = Data { byte: 0x1F, word: 0xABCD, big: !0 };
 /// data.hash(&mut adler);
 ///
-/// assert_eq!(adler.checksum(), 0x33410990);
+/// // hash value depends on architecture endianness
+/// if cfg!(target_endian = "little") {
+///     assert_eq!(adler.checksum(), 0x33410990);
+/// }
+/// if cfg!(target_endian = "big") {
+///     assert_eq!(adler.checksum(), 0x331F0990);
+/// }
+///
 /// ```
 ///
 /// [`new`]: #method.new
